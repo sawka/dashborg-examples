@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/sawka/dashborg-go-sdk/pkg/dash"
-	"github.com/sawka/dashborg-go-sdk/pkg/dashutil"
 )
 
 var EmailStrs = []string{"mike", "matt", "michelle", "pat", "jim", "marc", "andrew", "alan"}
@@ -82,9 +81,14 @@ func (m *CreditModel) UpdateCredits(req *dash.PanelRequest, state *PanelState, p
 	return nil
 }
 
+type SortSpec struct {
+	Column string `json:"column"`
+	Asc    bool   `json:"asc"`
+}
+
 type getUsersParams struct {
 	SearchEmail string
-	SortSpec    dashutil.SortSpec
+	SortSpec    SortSpec
 }
 
 func (m *CreditModel) GetUsers(req *dash.PanelRequest, state *PanelState, params *getUsersParams) (interface{}, error) {
