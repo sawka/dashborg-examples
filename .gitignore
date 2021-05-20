@@ -1,0 +1,10 @@
+*.key
+*.txt
+*.crt
+*~
+.#*
+env/
+*.pyc
+!requirements.txt
+*.egg-info/
+__pycache__/

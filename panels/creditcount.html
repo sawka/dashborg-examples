@@ -1,0 +1,36 @@
+<panel class="noshrink">
+  <h1>Credit Update Demo</h1>
+  <div class="row">
+    <d-input placeholder="Email" bindvalue="$state.searchemailinput"/>
+    <d-button handler="$state.searchemail = $state.searchemailinput">Email Search</d-button>
+  </div>
+  <style>
+    .hover-base .hover-target { visibility: hidden; }
+    .hover-base:hover .hover-target { visibility: visible; }
+  </style>
+  <d-data query="/get-users" querydata="{SearchEmail: $state.searchemail, SortSpec: $state.sortspec}" bindvalue="$.users"/>
+  <d-table bind="$.users" style="width: 500px;" bindsortspec="$state.sortspec">
+    <d-col label="#">
+      <d-text bind="@index + 1"/>
+    </d-col>
+    <d-col label="Email" sortid="Email">
+      <d-text bind=".Email"/>
+    </d-col>
+    <d-col label="Credits" class="row hover-base" style="align-items: center;" sortid="NumCredits">
+      <div style="font-size: 16px; bold; width: 80px;">
+        <d-text bind=".NumCredits" style="display: inline-block;"/>
+      </div>
+      <div class="row" style="width: 330px">
+        <if condition="$state.updateemail == .Email">
+          <d-select bind="[0..100]" bindvalue="$state.newcredits" defaultvalue="*.NumCredits" placeholder="Select" style="width:100px;"/>
+          <d-button handler="/update-credits({UserId: .UserId, NumCredits: $state.newcredits, Index: @index});" class-button="primary">Set</d-button>
+          <d-button handler="$state.updateemail=null">Cancel</d-button>
+        </if>
+        <if condition="$state.updateemail != .Email">
+          <d-button class="hover-target" handler="$state.updateemail=.Email; $state.newcredits = null;">Update</d-button>
+        </if>
+      </div>
+    </d-col>
+  </d-table>
+  <div style="height: 30px;"/>
+</panel>
