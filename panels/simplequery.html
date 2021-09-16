@@ -1,0 +1,24 @@
+<app ui="dashborg">
+  <h1>Simple Query</h1>
+  <d-data query="/@app:get-rows" output.bindpath="$.origdata"/>
+  <d-datasorter data.bindpath="$.origdata" output.bindpath="$.data" sortspec.bind="$.tablesortspec"/>
+  <d-datapager bind="$.data" output.bindpath="$.pageddata" pagespec.bindpath="$.pagespec" pagesize="*$.pagesize"/>
+  <d-pagination bind="$.pagespec" bindvalue="$.pagespec.curpage"/>
+  <d-table bind="$.pageddata" sortspec.bindpath="$.tablesortspec" startrownum="*$.pagespec.start">
+    <d-col label="#" bind="@index+1"/>
+    <d-col label="Logo">
+      <img height="30" src="*.logourl"/>
+    </d-col>
+    <d-col label="Company Name" sortid="name">
+      <a target="_blank" href="*.companyurl"><d-text bind=".name"/></a>
+    </d-col>
+    <d-col label="YC Rank" sortid="rank" bind=".rank"/>
+    <d-col label="Sector" bind=".sector"/>
+    <d-col label="HQ Location" bind=".hqlocation"/>
+    <d-col label="Is Prospect?">
+      <d-checkbox toggle readonly bindvalue="$.data[*.id==^.id].active" onchangehandler="$.togglemodal = {id: .id, newval: @value, name: .name, companyref: $local}"/>
+    </d-col>
+  </d-table>
+  <div style="height:20px; noshrink;"/>
+</app>
+
