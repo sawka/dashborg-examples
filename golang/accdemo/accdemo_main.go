@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"math/rand"
+	"reflect"
 	"regexp"
 	"time"
 
@@ -33,50 +34,39 @@ func (d CreateAccountFormData) Validate() map[string]string {
 	return errors
 }
 
-type PanelState struct {
+type AppState struct {
 	SelectedAccId string
 	CreateData    CreateAccountFormData `json:"create" mapstructure:"create"`
 }
 
-type PanelModel struct {
+type AppModel struct {
 	AccModel *AccModel
 }
 
-func (pm *PanelModel) RootHandler(req *dash.PanelRequest) error {
-	if !req.CheckAuth(dash.AuthPassword{"hello"}) {
-		return nil
-	}
-	err := req.SetHtmlFromFile("panels/accdemo.html")
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (pm *PanelModel) Upgrade(req *dash.PanelRequest, panelState interface{}, accId string) error {
+func (pm *AppModel) Upgrade(req *dash.AppRequest, accId string) error {
 	if accId == "" {
 		return fmt.Errorf("No AccountId Selected")
 	}
 	pm.AccModel.Upgrade(accId)
-	req.InvalidateData("/accounts/.*")
+	req.InvalidateData(".*")
 	return nil
 }
 
-func (pm *PanelModel) Downgrade(req *dash.PanelRequest, panelState interface{}, accId string) error {
+func (pm *AppModel) Downgrade(req *dash.AppRequest, accId string) error {
 	if accId == "" {
 		return fmt.Errorf("No AccountId Selected")
 	}
 	pm.AccModel.Downgrade(accId)
-	req.InvalidateData("/accounts/.*")
+	req.InvalidateData(".*")
 	return nil
 }
 
-func (pm *PanelModel) GetAccountsList(req *dash.PanelRequest) (interface{}, error) {
+func (pm *AppModel) GetAccountsList(req dash.Request) (interface{}, error) {
 	accList := pm.AccModel.CopyAccList()
 	return accList, nil
 }
 
-func (pm *PanelModel) GetAccount(req *dash.PanelRequest, panelState interface{}, accId string) (interface{}, error) {
+func (pm *AppModel) GetAccount(req dash.Request, accId string) (interface{}, error) {
 	acc := pm.AccModel.AccById(accId)
 	if acc == nil {
 		return nil, nil
@@ -84,60 +74,70 @@ func (pm *PanelModel) GetAccount(req *dash.PanelRequest, panelState interface{},
 	return acc, nil
 }
 
-func (pm *PanelModel) RefreshAccList(req *dash.PanelRequest) error {
+func (pm *AppModel) RefreshAccList(req *dash.AppRequest) error {
 	req.SetData("$state.selaccid", nil)
-	req.InvalidateData("/accounts/.*")
+	req.InvalidateData(".*")
 	return nil
 }
 
-func (pm *PanelModel) RegenAccList(req *dash.PanelRequest) error {
+func (pm *AppModel) RegenAccList(req *dash.AppRequest) error {
 	pm.AccModel.RegenAccounts()
 	req.SetData("$state.selaccid", nil)
-	req.InvalidateData("/accounts/.*")
+	req.InvalidateData(".*")
 	return nil
 }
 
-func (pm *PanelModel) RemoveAccount(req *dash.PanelRequest, panelState interface{}, accId string) error {
+func (pm *AppModel) RemoveAccount(req *dash.AppRequest, accId string) error {
 	if accId == "" {
 		return fmt.Errorf("No AccountId Selected")
 	}
 	pm.AccModel.RemoveAcc(accId)
-	req.InvalidateData("/accounts/.*")
+	req.InvalidateData(".*")
 	req.SetData("$state.selaccid", nil)
 	return nil
 }
 
-func (pm *PanelModel) CreateAccount(req *dash.PanelRequest, panelState PanelState) error {
-	errors := panelState.CreateData.Validate()
+func (pm *AppModel) CreateAccount(req *dash.AppRequest, appState AppState) error {
+	errors := appState.CreateData.Validate()
 	if len(errors) > 0 {
 		req.SetData("$state.create.errors", errors)
 		return nil
 	}
 	req.SetData("$state.create.errors", nil)
-	newAccId := pm.AccModel.CreateAcc(panelState.CreateData.Name, panelState.CreateData.Email)
+	newAccId := pm.AccModel.CreateAcc(appState.CreateData.Name, appState.CreateData.Email)
 	req.SetData("$state.createAccountModal", false)
 	req.SetData("$state.selaccid", newAccId)
-	req.InvalidateData("/accounts/.*")
+	req.InvalidateData(".*")
 	return nil
 }
 
 func main() {
 	rand.Seed(time.Now().Unix())
-	cfg := &dash.Config{ProcName: "acc-demo", AnonAcc: true, AutoKeygen: true}
-	dash.StartProcClient(cfg)
-	defer dash.WaitForClear()
-
+	cfg := &dash.Config{AnonAcc: true, AutoKeygen: true}
+	client, err := dash.ConnectClient(cfg)
+	if err != nil {
+		fmt.Printf("Error connecting DashborgCloudClient: %v\n", err)
+		return
+	}
 	accModel := MakeAccModel()
-	panel := &PanelModel{AccModel: accModel}
-	dash.RegisterPanelHandlerEx("acc-demo", "/", panel.RootHandler)
-	dash.RegisterPanelHandlerEx("acc-demo", "/acc/upgrade", panel.Upgrade)
-	dash.RegisterPanelHandlerEx("acc-demo", "/acc/downgrade", panel.Downgrade)
-	dash.RegisterDataHandlerEx("acc-demo", "/accounts/list", panel.GetAccountsList)
-	dash.RegisterDataHandlerEx("acc-demo", "/accounts/get", panel.GetAccount)
-	dash.RegisterPanelHandlerEx("acc-demo", "/acc/refresh-accounts", panel.RefreshAccList)
-	dash.RegisterPanelHandlerEx("acc-demo", "/acc/regen-acclist", panel.RegenAccList)
-	dash.RegisterPanelHandlerEx("acc-demo", "/acc/remove", panel.RemoveAccount)
-	dash.RegisterPanelHandlerEx("acc-demo", "/acc/create-account", panel.CreateAccount)
+	panel := &AppModel{AccModel: accModel}
 
-	select {}
+	app := client.AppClient().NewApp("acc-demo")
+	app.WatchHtmlFile("panels/accdemo.html", nil)
+	app.Runtime().SetAppStateType(reflect.TypeOf(AppState{}))
+	app.Runtime().PureHandler("get-accounts-list", panel.GetAccountsList)
+	app.Runtime().PureHandler("get-account", panel.GetAccount)
+	app.Runtime().Handler("acc-upgrade", panel.Upgrade)
+	app.Runtime().Handler("acc-downgrade", panel.Downgrade)
+	app.Runtime().Handler("regen-acclist", panel.RegenAccList)
+	app.Runtime().Handler("acc-remove", panel.RemoveAccount)
+	app.Runtime().Handler("refresh-accounts", panel.RefreshAccList)
+	app.Runtime().Handler("create-account", panel.CreateAccount)
+	err = client.AppClient().WriteAndConnectApp(app)
+	if err != nil {
+		fmt.Printf("Error writing app: %v\n", err)
+		return
+	}
+
+	client.WaitForShutdown()
 }

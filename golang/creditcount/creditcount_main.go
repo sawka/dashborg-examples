@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"math/rand"
+	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -24,7 +25,7 @@ type CreditModel struct {
 	Users []*UserType
 }
 
-type PanelState struct {
+type AppState struct {
 	SearchEmail string
 }
 
@@ -44,29 +45,15 @@ func MakeCreditModel() *CreditModel {
 	return rtn
 }
 
-func (m *CreditModel) RootHandler(req *dash.PanelRequest) error {
-	if !req.CheckAuth(dash.AuthPassword{Password: "hello"}) {
-		return nil
-	}
-	req.SetHtmlFromFile("panels/creditcount.html")
-	return nil
-}
-
-type updateCreditsParams struct {
-	UserId     int
-	NumCredits int
-	Index      int
-}
-
-func (m *CreditModel) UpdateCredits(req *dash.PanelRequest, state *PanelState, params *updateCreditsParams) error {
-	if params.UserId <= 0 || params.NumCredits < 0 || params.NumCredits > 100 {
+func (m *CreditModel) UpdateCredits(req *dash.AppRequest, userId int, numCredits int) error {
+	if userId <= 0 || numCredits < 0 || numCredits > 100 {
 		return fmt.Errorf("Invalid Params")
 	}
 	var foundUser *UserType
 	for i := 0; i < len(m.Users); i++ {
 		user := m.Users[i]
-		if user.UserId == params.UserId {
-			user.NumCredits = params.NumCredits
+		if user.UserId == userId {
+			user.NumCredits = numCredits
 			foundUser = user
 			break
 		}
@@ -74,10 +61,6 @@ func (m *CreditModel) UpdateCredits(req *dash.PanelRequest, state *PanelState, p
 	if foundUser == nil {
 		return fmt.Errorf("User not found")
 	}
-	req.SetData("$state.updateemail", nil)
-	userPath := fmt.Sprintf("$.users[%d].NumCredits", params.Index)
-	req.SetData(userPath, params.NumCredits)
-	// req.InvalidateData("/get-users")
 	return nil
 }
 
@@ -91,11 +74,11 @@ type getUsersParams struct {
 	SortSpec    SortSpec
 }
 
-func (m *CreditModel) GetUsers(req *dash.PanelRequest, state *PanelState, params *getUsersParams) (interface{}, error) {
+func (m *CreditModel) GetUsers(req dash.Request, state *AppState, params getUsersParams) (interface{}, error) {
 	var rtn []*UserType
-
 	if params.SearchEmail == "" {
-		rtn = m.Users
+		rtn = make([]*UserType, len(m.Users))
+		copy(rtn, m.Users)
 	} else {
 		for _, user := range m.Users {
 			if strings.Contains(user.Email, params.SearchEmail) {
@@ -126,17 +109,34 @@ func (m *CreditModel) GetUsers(req *dash.PanelRequest, state *PanelState, params
 	return rtn, nil
 }
 
+func (m *CreditModel) TestHandler(req *dash.AppRequest) error {
+	fmt.Printf("TEST HANDLER\n")
+	req.SetData("@rtn", map[string]interface{}{"x": 5})
+	return nil
+}
+
 func main() {
 	rand.Seed(time.Now().Unix())
+
 	config := &dash.Config{AutoKeygen: true, AnonAcc: true}
-	dash.StartProcClient(config)
-	defer dash.WaitForClear()
-
+	client, err := dash.ConnectClient(config)
+	if err != nil {
+		fmt.Printf("Error connecting client: %v\n", err)
+		return
+	}
 	model := MakeCreditModel()
-	dash.RegisterPanelHandler("creditcount", "/", model.RootHandler)
-	dash.RegisterDataHandlerEx("creditcount", "/get-users", model.GetUsers)
-	dash.RegisterPanelHandlerEx("creditcount", "/update-credits", model.UpdateCredits)
-
-	select {}
-
+	app := client.AppClient().NewApp("creditcount")
+	app.SetOfflineAccess(true)
+	app.SetAllowedRoles("admin", "public")
+	app.WatchHtmlFile("panels/creditcount.html", nil)
+	app.Runtime().SetAppStateType(reflect.TypeOf(&AppState{}))
+	app.Runtime().PureHandler("get-users", model.GetUsers)
+	app.Runtime().Handler("update-credits", model.UpdateCredits)
+	app.Runtime().Handler("test", model.TestHandler)
+	err = client.AppClient().WriteAndConnectApp(app)
+	if err != nil {
+		fmt.Printf("Error connecting app: %v\n", err)
+		return
+	}
+	client.WaitForShutdown()
 }

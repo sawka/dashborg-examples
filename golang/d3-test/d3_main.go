@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"math/rand"
 	"time"
 
@@ -18,15 +19,7 @@ const NUM_DATA = 30
 
 var Colors []string = []string{"red", "green", "blue", "purple"}
 
-func RootHandler(req *dash.PanelRequest) error {
-	err := req.SetHtmlFromFile("panels/d3-test.html")
-	if err != nil {
-		return err
-	}
-	return RegenData(req)
-}
-
-func RegenData(req *dash.PanelRequest) error {
+func RegenData(req *dash.AppRequest) error {
 	rtn := make([]DataPoint, 0)
 	for i := 0; i < NUM_DATA; i++ {
 		point := DataPoint{
@@ -43,13 +36,24 @@ func RegenData(req *dash.PanelRequest) error {
 
 func main() {
 	rand.Seed(time.Now().Unix())
+
 	config := &dash.Config{AutoKeygen: true, AnonAcc: true}
-	dash.StartProcClient(config)
-	defer dash.WaitForClear()
+	client, err := dash.ConnectClient(config)
+	if err != nil {
+		fmt.Printf("Error connecting client: %v\n", err)
+		return
+	}
 
-	dash.RegisterPanelHandler("d3-test", "/", RootHandler)
-	dash.RegisterPanelHandler("d3-test", "/regen-data", RegenData)
+	app := client.AppClient().NewApp("d3-test")
+	app.WatchHtmlFile("panels/d3-test.html", nil)
+	app.SetInitRequired(true)
+	app.Runtime().Handler("regen-data", RegenData)
+	app.Runtime().SetInitHandler(RegenData)
 
-	select {}
-
+	err = client.AppClient().WriteAndConnectApp(app)
+	if err != nil {
+		fmt.Printf("Error connecting app: %v\n", err)
+		return
+	}
+	client.WaitForShutdown()
 }

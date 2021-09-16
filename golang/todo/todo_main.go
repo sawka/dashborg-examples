@@ -1,6 +1,9 @@
 package main
 
 import (
+	"fmt"
+	"reflect"
+
 	"github.com/sawka/dashborg-go-sdk/pkg/dash"
 )
 
@@ -16,44 +19,35 @@ type ServerTodoModel struct {
 	NextId   int
 }
 
-type TodoPanelState struct {
+type TodoAppState struct {
 	TodoType string `json:"todotype"`
 	NewTodo  string `json:"newtodo"`
 }
 
-func (m *ServerTodoModel) RootHandler(req *dash.PanelRequest) error {
-	req.SetHtmlFromFile("panels/todo.html")
-	return nil
-}
-
-func (m *ServerTodoModel) AddTodo(req *dash.PanelRequest, state *TodoPanelState) error {
-	req.SetData("$.errors", nil)
+func (m *ServerTodoModel) AddTodo(req *dash.AppRequest, state *TodoAppState) error {
 	if state.NewTodo == "" {
-		req.SetData("$.errors", "Please enter a Todo Item")
-		return nil
+		return fmt.Errorf("Please enter a Todo Item")
 	}
 	if state.TodoType == "" {
-		req.SetData("$.errors", "Please select a Todo Type")
-		return nil
+		return fmt.Errorf("Please select a Todo Type")
 	}
 	m.TodoList = append(m.TodoList, &TodoItem{Id: m.NextId, Item: state.NewTodo, TodoType: state.TodoType})
 	m.NextId++
-	req.InvalidateData("/get-todo-list")
-	req.SetData("$state.newtodo", "")
+	req.InvalidateData("/@app:get-todo-list")
 	return nil
 }
 
-func (m *ServerTodoModel) MarkTodoDone(req *dash.PanelRequest, state interface{}, todoId int) error {
+func (m *ServerTodoModel) MarkTodoDone(req *dash.AppRequest, todoId int) error {
 	for _, todoItem := range m.TodoList {
 		if todoItem.Id == todoId {
 			todoItem.Done = true
 		}
 	}
-	req.InvalidateData("/get-todo-list")
+	req.InvalidateData("/@app:get-todo-list")
 	return nil
 }
 
-func (m *ServerTodoModel) RemoveTodo(req *dash.PanelRequest, state interface{}, todoId int) error {
+func (m *ServerTodoModel) RemoveTodo(req *dash.AppRequest, todoId int) error {
 	newList := make([]*TodoItem, 0)
 	for _, todoItem := range m.TodoList {
 		if todoItem.Id == todoId {
@@ -62,23 +56,31 @@ func (m *ServerTodoModel) RemoveTodo(req *dash.PanelRequest, state interface{}, 
 		newList = append(newList, todoItem)
 	}
 	m.TodoList = newList
-	req.InvalidateData("/get-todo-list")
+	req.InvalidateData("/@app:get-todo-list")
 	return nil
 }
 
-func (m *ServerTodoModel) GetTodoList(req *dash.PanelRequest) (interface{}, error) {
+func (m *ServerTodoModel) GetTodoList() (interface{}, error) {
 	return m.TodoList, nil
 }
 
 func main() {
-	cfg := &dash.Config{ProcName: "todo", AnonAcc: true, AutoKeygen: true}
-	dash.StartProcClient(cfg)
-	defer dash.WaitForClear()
+	cfg := &dash.Config{AnonAcc: true, AutoKeygen: true}
+	client, err := dash.ConnectClient(cfg)
+	if err != nil {
+		panic(err)
+	}
 	tm := &ServerTodoModel{NextId: 1}
-	dash.RegisterPanelHandlerEx("todo", "/", tm.RootHandler)
-	dash.RegisterPanelHandlerEx("todo", "/add-todo", tm.AddTodo)
-	dash.RegisterPanelHandlerEx("todo", "/mark-todo-done", tm.MarkTodoDone)
-	dash.RegisterPanelHandlerEx("todo", "/remove-todo", tm.RemoveTodo)
-	dash.RegisterDataHandlerEx("todo", "/get-todo-list", tm.GetTodoList)
-	select {}
+	app := client.AppClient().NewApp("todo")
+	app.WatchHtmlFile("panels/todo.html", nil)
+	app.Runtime().SetAppStateType(reflect.TypeOf(&TodoAppState{}))
+	app.Runtime().Handler("add-todo", tm.AddTodo)
+	app.Runtime().Handler("mark-todo-done", tm.MarkTodoDone)
+	app.Runtime().Handler("remove-todo", tm.RemoveTodo)
+	app.Runtime().PureHandler("get-todo-list", tm.GetTodoList)
+	err = client.AppClient().WriteAndConnectApp(app)
+	if err != nil {
+		panic(err)
+	}
+	client.WaitForShutdown()
 }

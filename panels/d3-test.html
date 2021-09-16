@@ -1,14 +1,14 @@
-<panel fullscreen onloadhandler="@local/render-d3($.data)">
+<app fullscreen onloadhandler="/@local:render-d3($.data)" ui="dashborg">
   <script sync src="https://d3js.org/d3.v6.min.js"></script>
   <include sync script="d3-code"/>
   <h1 style="noshrink;">D3 Test</h1>
 
   <div class="row">
-    <d-select bindvalue="$state.mode" defaultvalue="scatter" style="width: 300px;" onchangehandler="@local/render-d3($.data)">
+    <d-select bindvalue="$state.mode" defaultvalue="scatter" style="width: 300px;" onchangehandler="/@local:render-d3($.data)">
       <d-option value="table">Table</d-option>
       <d-option value="scatter">Scatter</d-option>
     </d-select>
-    <d-button handler="/regen-data; @local/render-d3($.data)">Regen Data</d-button>
+    <d-button handler="/@app:regen-data; /@local:render-d3($.data)">Regen Data</d-button>
   </div>
 
   <d-table if="$state.mode == 'table'" bind="$.data">
@@ -34,10 +34,12 @@
 
   <svg style.display="*$state.mode == 'scatter' ? 'block' : 'none'" style="width: 560px; height: 560px;" id="scatter-svg">
   </svg>
-</panel>
+</app>
 
 <script name="d3-code">
-  DashborgService.registerPanelHandler("d3-test", "/render-d3", renderScatter);
+  console.log("register handlers");
+  DashborgService.registerHandler("d3-test", "render-d3", renderScatter);
+  DashborgService.registerPureHandler("d3-test", "make-data", makeData);
   
   function renderScatter(req) {
       let data = req.data;
@@ -58,5 +60,4 @@
           .attr("r", (d) => Math.sqrt(d.Val)*2)
           .style("fill", (d) => d.Color);
   }
-
 </script>
