@@ -72,6 +72,7 @@ func main() {
 	}
 	tm := &ServerTodoModel{NextId: 1}
 	app := client.AppClient().NewApp("todo")
+	app.SetAppTitle("Todo App")
 	app.WatchHtmlFile("panels/todo.html", nil)
 	app.Runtime().SetAppStateType(reflect.TypeOf(&TodoAppState{}))
 	app.Runtime().Handler("add-todo", tm.AddTodo)

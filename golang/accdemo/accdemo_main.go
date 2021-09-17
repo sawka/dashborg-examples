@@ -122,7 +122,8 @@ func main() {
 	accModel := MakeAccModel()
 	panel := &AppModel{AccModel: accModel}
 
-	app := client.AppClient().NewApp("acc-demo")
+	app := client.AppClient().NewApp("accdemo")
+	app.SetAppTitle("Account Demo")
 	app.WatchHtmlFile("panels/accdemo.html", nil)
 	app.Runtime().SetAppStateType(reflect.TypeOf(AppState{}))
 	app.Runtime().PureHandler("get-accounts-list", panel.GetAccountsList)

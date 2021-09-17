@@ -44,8 +44,6 @@ func main() {
 	model := &SimpleQueryModel{
 		DB: db,
 	}
-	fmt.Printf("model: %v\n", model)
-
 	config := &dash.Config{AnonAcc: true}
 	client, err := dash.ConnectClient(config)
 	if err != nil {
@@ -53,6 +51,7 @@ func main() {
 		return
 	}
 	app := client.AppClient().NewApp("simplequery")
+	app.SetAppTitle("Simple Query")
 	app.SetOfflineAccess(false)
 	app.WatchHtmlFile("./panels/simplequery.html", nil)
 	app.Runtime().PureHandler("get-rows", model.GetRows)

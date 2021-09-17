@@ -33,6 +33,7 @@ func main() {
 		return
 	}
 	app := client.AppClient().NewApp("bulma")
+	app.SetAppTitle("Bulma UI Demo")
 	app.SetHtmlFromFile("panels/bulma.html")
 	app.Runtime().Handler("test-click", TestClick)
 	app.Runtime().Handler("test-zip", ClickZipCode)

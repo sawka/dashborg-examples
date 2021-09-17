@@ -45,6 +45,7 @@ func main() {
 	}
 
 	app := client.AppClient().NewApp("d3-test")
+	app.SetAppTitle("D3 Demo")
 	app.WatchHtmlFile("panels/d3-test.html", nil)
 	app.SetInitRequired(true)
 	app.Runtime().Handler("regen-data", RegenData)

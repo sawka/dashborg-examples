@@ -109,12 +109,6 @@ func (m *CreditModel) GetUsers(req dash.Request, state *AppState, params getUser
 	return rtn, nil
 }
 
-func (m *CreditModel) TestHandler(req *dash.AppRequest) error {
-	fmt.Printf("TEST HANDLER\n")
-	req.SetData("@rtn", map[string]interface{}{"x": 5})
-	return nil
-}
-
 func main() {
 	rand.Seed(time.Now().Unix())
 
@@ -126,13 +120,13 @@ func main() {
 	}
 	model := MakeCreditModel()
 	app := client.AppClient().NewApp("creditcount")
+	app.SetAppTitle("Update User Credits")
 	app.SetOfflineAccess(true)
 	app.SetAllowedRoles("admin", "public")
 	app.WatchHtmlFile("panels/creditcount.html", nil)
 	app.Runtime().SetAppStateType(reflect.TypeOf(&AppState{}))
 	app.Runtime().PureHandler("get-users", model.GetUsers)
 	app.Runtime().Handler("update-credits", model.UpdateCredits)
-	app.Runtime().Handler("test", model.TestHandler)
 	err = client.AppClient().WriteAndConnectApp(app)
 	if err != nil {
 		fmt.Printf("Error connecting app: %v\n", err)

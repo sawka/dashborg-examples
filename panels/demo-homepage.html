@@ -1,0 +1,102 @@
+<app ui="dashborg">
+  <d-import component="local:demo-card" as="demo-card"/>
+  <div class="ui basic segment" style="max-width: 800px;">
+    <h1>Welcome to the Dashborg Demo Site</h1>
+    <div class="content" style="margin-top: 10px;">
+      <d-message class="info" style="max-width: 600px;">
+        This page is a real running Dashborg account.
+        It is running the <a href="https://github.com/sawka/dashborg-examples">example code</a> that ships with the
+        <a href="https://github.com/sawka/dashborg-go-sdk">Dashborg Go SDK</a>.  Each sub-panel is powered by
+        a separate process.
+      </d-message>
+
+      <div class="ui basic segment" style="padding-left: 0">
+        <div class="ui cards">
+          <demo-card title="Sample Account Control Panel" onclickhandler="pushapp('accdemo')">
+            <div slot="description" class="col">
+              <p>
+                View accounts, upgrade/downgrade/delete buttons.  Add a new account with a modal.
+              </p>
+              <p>
+                <a href="https://github.com/sawka/dashborg-examples/tree/master/golang/accdemo/accdemo_main.go">Golang (on Github)</a>
+                |
+                <a href="https://github.com/sawka/dashborg-examples/tree/master/panels/accdemo.html">HTML View (on Github)</a>
+              </p>
+            </div>
+          </demo-card>
+          <demo-card title="Todo App" onclickhandler="pushapp('todo')">
+            <div slot="description">
+              <p>
+                A simple application to add todo items, mark them completed and delete them.
+              </p>
+              <p>
+                <a href="https://github.com/sawka/dashborg-examples/tree/master/golang/todo/todo_main.go">Golang (on Github)</a>
+                |
+                <a href="https://github.com/sawka/dashborg-examples/tree/master/panels/todo.html">HTML View (on Github)</a>
+              </p>
+            </div>
+          </demo-card>
+          <demo-card title="Update Account Credits" onclickhandler="pushapp('creditcount')">
+            <div slot="description">
+              <p>
+                Made as a demo for a small company I talked with.  They needed a solution to add/remove credits
+                from their users.  They wanted:
+                <ul>
+                  <li>Email Search to find users</li>
+                  <li>Sorting by email and current credit count</li>
+                  <li>A dropdown control to set the new credit number</li>
+                </ul>
+              </p>
+              <p>
+                <a href="https://github.com/sawka/dashborg-examples/tree/master/golang/creditcount/creditcount_main.go">Golang (on Github)</a>
+                |
+                <a href="https://github.com/sawka/dashborg-examples/tree/master/panels/creditcount.html">HTML View (on Github)</a>
+              </p>
+            </div>
+          </demo-card>
+          <demo-card title="Bulma UI Example" onclickhandler="pushapp('bulma')">
+            <div slot="description">
+              <p>A simple UI demo using the popular <a target="_blank" href="https://bulma.io/">Bulma</a> UI Library.</p>
+              <p>
+                You can import your own CSS and use UI components from different frameworks like Bulma, Bootstrap,
+                or Semantic UI.
+              </p>
+              <p>
+                <a href="https://github.com/sawka/dashborg-examples/tree/master/golang/bulma/bulma_main.go">Golang (on Github)</a>
+                |
+                <a href="https://github.com/sawka/dashborg-examples/tree/master/panels/bulma.html">HTML View (on Github)</a>
+              </p>
+            </div>
+          </demo-card>
+          <demo-card title="D3 Demo" onclickhandler="pushapp('d3-test')">
+            <div slot="description">
+              <p>
+                Dashborg is compatible with 3rd party JavaScript libraries like D3 or Google Charts.
+                Here's an example of rendering a graph in D3 with data returned from a Dashborg enabled backend.
+              </p>
+              <p>
+                <a href="https://github.com/sawka/dashborg-examples/tree/master/golang/d3-test/d3_main.go">Golang (on Github)</a>
+                |
+                <a href="https://github.com/sawka/dashborg-examples/tree/master/panels/d3-test.html">HTML View (on Github)</a>
+              </p>
+            </div>
+          </demo-card>
+        </div>
+      </div>
+    </div>
+  </div>
+</app>
+
+<define-component name="demo-card">
+  <div class="card" style="width: 350px">
+    <div class="content">
+      <div class="header"><d-text bind="@node.attrs.title"/></div>
+      <div class="description" style="height: calc(100% - 40px);">
+        <d-children bind="@children.byslot.description"/>
+      </div>
+    </div>
+    <a class="ui bottom attached button" href="*@node.attrs.href" onclickhandler="fire @node->onclickhandler();">
+      View
+    </a>
+  </div>
+</define-component>
