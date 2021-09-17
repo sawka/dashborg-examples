@@ -44,7 +44,7 @@ func main() {
 	model := &SimpleQueryModel{
 		DB: db,
 	}
-	config := &dash.Config{AnonAcc: true}
+	config := &dash.Config{AnonAcc: true, AutoKeygen: true}
 	client, err := dash.ConnectClient(config)
 	if err != nil {
 		fmt.Printf("Error connecting client: %v\n", err)
