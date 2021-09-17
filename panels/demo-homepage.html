@@ -102,7 +102,9 @@
 <define-component name="demo-card">
   <div class="card" style="width: 350px">
     <div class="content">
-      <div class="header"><d-text bind="@node.attrs.title"/></div>
+      <div class="header">
+        <a onclickhandler="fire @node->onclickhandler();"><d-text bind="@node.attrs.title"/></a>
+      </div>
       <div class="description" style="height: calc(100% - 40px);">
         <d-children bind="@children.byslot.description"/>
       </div>
