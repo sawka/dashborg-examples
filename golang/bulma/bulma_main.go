@@ -42,6 +42,5 @@ func main() {
 		fmt.Printf("Error writing app: %v\n", err)
 		return
 	}
-
-	select {}
+	client.WaitForShutdown()
 }
