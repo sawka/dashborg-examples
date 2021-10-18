@@ -43,12 +43,6 @@ type Model struct {
 	NextId   int
 }
 
-func VehiclesPageHandler(req *dash.AppRequest, pageName string, params map[string]interface{}) error {
-	req.SetData("$.color", "blue")
-	req.SetData("$.vnum", params["vnum"])
-	return nil
-}
-
 func (m *Model) GetAllVehicles() (interface{}, error) {
 	return m.Vehicles, nil
 }
@@ -112,7 +106,6 @@ func main() {
 	app.WatchHtmlFile("panels/vtrack.html", nil)
 	app.SetInitRequired(true)
 	app.SetPagesEnabled(true)
-	app.Runtime().SetPageHandler("vehicles", VehiclesPageHandler)
 	app.Runtime().PureHandler("add-vehicle", m.AddVehicle)
 	app.Runtime().PureHandler("get-all-vehicles", m.GetAllVehicles)
 	app.Runtime().PureHandler("delete-vehicle", m.DeleteVehicle)
