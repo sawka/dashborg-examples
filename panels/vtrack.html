@@ -1,0 +1,60 @@
+<app ui="dashborg">
+  <div class="col" style="max-width: 500px; margin-left: auto; margin-right: auto;">
+    <h1>Welcome to VTrack</h1>
+    <d-message>
+      <p>Track your fleet of cars or trucks with VTRACK</p>
+      <p>Built with Dashborg</p>
+    </d-message>
+    <d-button handler="navto('vehicles');" class-button="primary">Show Existing Vehicles</d-button>
+  </div>
+</app>
+
+<page name="vehicles" style="max-width: 600px;">
+  <h1>All Vehicles</h1>
+  <d-data query="/@app:get-all-vehicles" output.bindpath="$.vehicles"/>
+  <d-button handler="$.newvehiclemodal = true;" class-button="primary">Add Vehicle</d-button>
+  <div class="ui segment" if="$.vehicles">
+    <div class="ui divided items">
+      <d-foreach bind="$.vehicles">
+        <div class="item hover-base">
+          <div class="content">
+            <div class="header">
+              <d-text bind=".make"/> <d-text bind=".model"/>
+            </div>
+            <div class="content">
+              Year: <d-text bind=".year"/>, License: <d-text bind=".license"/>
+            </div>
+          </div>
+          <d-button handler="$.editvehiclemodal = true; $.editvehicle = ." class-button="small hover-target">Edit</d-button>
+          <d-confirmbutton class-button="small red hover-target" handler="/@app:delete-vehicle(.id); invalidate;">Delete</d-confirmbutton>
+        </div>
+      </d-foreach>
+    </div>
+  </div>
+  <d-message if="fn:len($.vehicles) == 0" style="max-width: 500px; margin-top: 20px;">
+    <div class="header">No Vehicles</div>
+    <p>Use the button above to add a new vehicle to the list</p>
+  </d-message>
+  <d-modal open.bindpath="$.newvehiclemodal" modaltitle="Add Vehicle" closeicon>
+    <div class="content col">
+      <local-vehicle-form cancelhandler="$.newvehiclemodal = null;" submithandler="/@app:add-vehicle(@vehicle); $.newvehiclemodal = null; invalidate;"/>
+    </div>
+  </d-modal>
+  <d-modal open.bindpath="$.editvehiclemodal" modaltitle="Edit Vehicle" closeicon>
+    <div class="content col">
+      <local-vehicle-form cancelhandler="$.editvehiclemodal = null;" vehicle.bindpath="$.editvehicle" submithandler="/@app:edit-vehicle(@vehicle); $.editvehiclemodal = null; invalidate;"/>
+    </div>
+  </d-modal>
+</page>
+
+<define-component name="vehicle-form" datatypes="*vehicle,*errormsg" privatedatatypes="*rawdata">
+  <d-input label="Make" value.bindpath="@vehicle.make"/>
+  <d-input label="Model" value.bindpath="@vehicle.model"/>
+  <d-input label="Year" value.bindpath="@rawdata.year" converttype="int" convertoutput.bindpath="@vehicle.year" defaultvalue="*@vehicle.year"/>
+  <d-input label="License Plate" value.bindpath="@vehicle.license"/>
+  <d-error data.bindpath="@errormsg"/>
+  <div class="row">
+    <d-button class-button="primary" onerrorhandler="@errormsg = @error.message;" handler="@errormsg = null; fire @node->submithandler({vehicle: @vehicle})">Submit</d-button>
+    <d-button handler="fire @node->cancelhandler()">Cancel</d-button>
+  </div>
+</define-component>
