@@ -66,6 +66,8 @@ github.com/sawka/dashborg-go-sdk v0.7.1 h1:1mVXNpjGA1oOX92BvR4dZnM7NxYAGnGpWnUm7
 github.com/sawka/dashborg-go-sdk v0.7.1/go.mod h1:AVCgMLZpb1rF66mREigG3vG2gp9bPyc9EpPwq5dL26o=
 github.com/sawka/dashborg-go-sdk v0.7.2 h1:8/CNp2XIQX3/hkvyW7guhVcfG8mrjoOVAEiHwBnSZPI=
 github.com/sawka/dashborg-go-sdk v0.7.2/go.mod h1:AVCgMLZpb1rF66mREigG3vG2gp9bPyc9EpPwq5dL26o=
+github.com/sawka/dashborg-go-sdk v0.7.3 h1:ye0wiHG+5u7vT5R7Quc46+rCiFPMXGQbd0jsivnQnRQ=
+github.com/sawka/dashborg-go-sdk v0.7.3/go.mod h1:AVCgMLZpb1rF66mREigG3vG2gp9bPyc9EpPwq5dL26o=
 github.com/spaolacci/murmur3 v0.0.0-20180118202830-f09979ecbc72/go.mod h1:JwIasOWyU6f++ZhiEuf87xNszmSA2myDM2Kzu9HwQUA=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/testify v1.5.1/go.mod h1:5W2xD1RspED5o8YsWQXVCued0rvSQ+mT+I5cxcmMvtA=
