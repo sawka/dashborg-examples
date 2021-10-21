@@ -35,18 +35,18 @@ class TodoModel:
         self.todo_list = [t for t in self.todo_list if t["Id"] != todo_id]
         req.invalidate_data("get-todo-list")
         return
-        
 
 async def main():
     config = dashborg.Config(proc_name="todo", anon_acc=True, auto_keygen=True)
     client = await dashborg.connect_client(config)
     m = TodoModel()
     app = client.app_client().new_app("todo")
+    app.set_app_title("Todo App")
     app.set_html(file_name="panels/todo.html", watch=True)
-    app.runtime.set_handler("get-todo-list", m.get_todo_list, pure_handler=True)
-    app.runtime.set_handler("add-todo", m.add_todo)
-    app.runtime.set_handler("mark-todo-done", m.mark_todo_done)
-    app.runtime.set_handler("remove-todo", m.remove_todo)
+    app.runtime.handler("get-todo-list", m.get_todo_list, pure_handler=True)
+    app.runtime.handler("add-todo", m.add_todo)
+    app.runtime.handler("mark-todo-done", m.mark_todo_done)
+    app.runtime.handler("remove-todo", m.remove_todo)
     await client.app_client().write_app(app, connect=True)
     await client.wait_for_shutdown()
 

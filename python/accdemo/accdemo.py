@@ -13,7 +13,7 @@ def my_serialize(obj):
         return rtn
     return dashborg.serialize(obj)
 
-class PanelModel:
+class AppModel:
     def __init__(self, acc_model):
         self.acc_model = acc_model
 
@@ -24,34 +24,34 @@ class PanelModel:
 
     def refresh_accounts(self, req):
         req.set_data("$state.selaccid", None)
-        req.invalidate_data("/accounts/.*")
+        req.invalidate_data(".*")
 
-    def get_acc_list(self, req):
+    def get_acc_list(self):
         return self.acc_model.all_accs()
 
-    def get_acc_by_id(self, req):
-        return self.acc_model.acc_by_id(req.data)
+    def get_acc_by_id(self, _id : str = None):
+        return self.acc_model.acc_by_id(_id)
 
-    def upgrade(self, req):
-        self.acc_model.upgrade(req.data)
-        req.invalidate_data("/accounts/.*")
+    def upgrade(self, req, _id : str):
+        self.acc_model.upgrade(_id)
+        req.invalidate_data(".*")
 
-    def downgrade(self, req):
-        self.acc_model.downgrade(req.data)
-        req.invalidate_data("/accounts/.*")
+    def downgrade(self, req, _id : str):
+        self.acc_model.downgrade(_id)
+        req.invalidate_data(".*")
 
-    def remove(self, req):
-        self.acc_model.remove_acc(req.data)
-        self.refresh_accounts(req)
+    def remove(self, req, _id : str):
+        self.acc_model.remove_acc(_id)
+        req.invalidate_data(".*")
 
     def regen_acc_list(self, req):
         self.acc_model.regen_accounts()
-        self.refresh_accounts(req)
+        req.invalidate_data(".*")
 
-    def create_account(self, req):
-        form_data = req.panel_state.get("create", {})
-        name = form_data.get("name", "").strip()
-        email = form_data.get("email", "").strip()
+    def create_account(self, req, app_state):
+        print(f"** create account {app_state}")
+        name = app_state.get("create", {}).get("name", "").strip()
+        email = app_state.get("create", {}).get("email", "").strip()
         errors = {}
         if name == "":
             errors["name"] = "Name must not be empty"
@@ -70,23 +70,27 @@ class PanelModel:
         new_accid = self.acc_model.create_acc(name, email)
         req.set_data("$state.createAccountModal", False)
         req.set_data("$state.selaccid", new_accid)
-        req.invalidate_data("/accounts/.*")
+        req.invalidate_data(".*")
         
 
 async def main():
     config = dashborg.Config(proc_name="accdemo", anon_acc=True, auto_keygen=True)
-    await dashborg.start_proc_client(config)
+    client = await dashborg.connect_client(config)
 
-    panel = PanelModel(AccModel())
-    await dashborg.register_panel_handler("accdemo", "/", panel.root_handler)
-    await dashborg.register_data_handler("accdemo", "/accounts/list", panel.get_acc_list)
-    await dashborg.register_data_handler("accdemo", "/accounts/get", panel.get_acc_by_id)
-    await dashborg.register_panel_handler("accdemo", "/acc/upgrade", panel.upgrade)
-    await dashborg.register_panel_handler("accdemo", "/acc/downgrade", panel.downgrade)
-    await dashborg.register_panel_handler("accdemo", "/acc/refresh-accounts", panel.refresh_accounts)
-    await dashborg.register_panel_handler("accdemo", "/acc/regen-acclist", panel.regen_acc_list)
-    await dashborg.register_panel_handler("accdemo", "/acc/remove", panel.remove)
-    await dashborg.register_panel_handler("accdemo", "/acc/create-account", panel.create_account)
+    m = AppModel(AccModel())
+    app = client.app_client().new_app("accdemo")
+    app.set_app_title("Account Demo")
+    app.set_html(file_name="panels/accdemo.html", watch=True)
+    app.runtime.handler("get-accounts-list", m.get_acc_list, pure_handler=True)
+    app.runtime.handler("get-account", m.get_acc_by_id, pure_handler=True)
+    app.runtime.handler("acc-upgrade", m.upgrade)
+    app.runtime.handler("acc-downgrade", m.downgrade)
+    app.runtime.handler("refresh-accounts", m.refresh_accounts)
+    app.runtime.handler("regen-acclist", m.regen_acc_list)
+    app.runtime.handler("acc-remove", m.remove)
+    app.runtime.handler("create-account", m.create_account)
+    await client.app_client().write_app(app, connect=True)
+    await client.wait_for_shutdown()
     while True:
         await asyncio.sleep(1)
 
