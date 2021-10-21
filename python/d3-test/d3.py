@@ -5,10 +5,6 @@ import random
 NUM_DATA = 30
 COLORS = ["red", "green", "blue", "purple"]
 
-async def root_handler(req):
-    await req.set_html_from_file("panels/d3-test.html")
-    regen_data(req)
-
 def regen_data(req):
     rtn = []
     for i in range(NUM_DATA):
@@ -23,9 +19,15 @@ def regen_data(req):
 
 async def main():
     config = dashborg.Config(proc_name="d3", anon_acc=True, auto_keygen=True)
-    await dashborg.start_proc_client(config)
-    await dashborg.register_panel_handler("d3-test", "/", root_handler)
-    await dashborg.register_panel_handler("d3-test", "/regen-data", regen_data)
+    client = await dashborg.connect_client(config)
+    app = client.app_client().new_app("d3-test")
+    app.set_app_title("D3 Demo")
+    app.set_html(file_name="./panels/d3-test.html", watch=True)
+    app.set_init_required(True)
+    app.runtime.handler("regen-data", regen_data)
+    app.runtime.init_handler(regen_data)
+    await client.app_client().write_app(app, connect=True)
+    await client.wait_for_shutdown()
     while True:
         await asyncio.sleep(1)
 

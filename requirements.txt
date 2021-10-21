@@ -1,11 +1,2 @@
-aiofiles==0.7.0
-cffi==1.14.5
-cryptography==3.4.7
-dashborg-python-sdk==0.3.2.dev1
-ecdsa==0.16.1
-grpcio==1.37.1
-grpcio-tools==1.37.1
-protobuf==3.17.0
-pycparser==2.20
-PyJWT==2.1.0
-six==1.16.0
+dashborg-python-sdk==0.4.0.dev1
+
