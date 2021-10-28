@@ -1,0 +1,59 @@
+<app ui="dashborg">
+  <h1>Sample BadgerDB Admin</h1>
+
+  <div class="ui segment">
+    <h4>Sizes</h4>
+    <div class="row">
+      <d-data query="/@app:get-sizes" output.bindpath="$.sizes"/>
+      <d-stat bind="$.sizes.lsm" label="LSM"/>
+      <div style="width: 50px"/>
+      <d-stat bind="$.sizes.vlog" label="VLog"/>
+    </div>
+  </div>
+
+  <div class="ui segment">
+    <h4>Simple Get</h4>
+    <div class="row" style="align-items: center;">
+      <d-input label="Key" type="text" bindvalue="$.keyinput"/>
+      <d-button handler="$.output = null; $.output = /@app:get-string-value($.keyinput); ">Get</d-button>
+      <div if="$.output != null" style="padding-left: 10px; border-left: 1px solid black;">
+        <pre><d-text bind="$.output"/></pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="ui segment">
+    <h4>Simple Set</h4>
+    <div class="row" style="align-items: center;">
+      <d-input label="Key" type="text" bindvalue="$.setvals.keyinput"/>
+      <d-input label="Value" type="text" bindvalue="$.setvals.valueinput"/>
+      <d-button handler="/@app:set-string-value($.setvals.keyinput, $.setvals.valueinput); $.setvals = null; invalidate;">Set</d-button>
+    </div>
+  </div>
+
+  <div class="ui segment col">
+    <h4>Value Log GC</h4>
+    <div class="row">
+      <d-select label="Discard Ratio" defaultvalue="0.50" bindvalue="$.discardratio">
+        <d-option value="0.00">0.00</d-option>
+        <d-option value="0.25">0.25</d-option>
+        <d-option value="0.50">0.50</d-option>
+        <d-option value="0.75">0.75</d-option>
+      </d-select>
+      <d-button
+        handler="$.gcerr = null; $.gcoutput = null; /@app:run-value-log-gc(fn:float($.discardratio)); $.gcoutput = true;"
+        class-button="primary"
+        onerrorhandler="$.gcerr = @error.message"
+      >
+        Run
+      </d-button>
+      <d-button handler="$.gcerr = null; $.gcoutput = null;">Clear</d-button>
+    </div>
+    <d-message if="$.gcoutput" class-message="success" style="max-width: 500px;">
+      GC Started
+    </d-message>
+    <d-error data.bindpath="$.gcerr" style="max-width: 500px;"/>
+  </div>
+
+  
+</app>
